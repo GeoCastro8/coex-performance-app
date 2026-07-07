@@ -1,8 +1,15 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from database import get_integrated_data, get_llenado_data
+from database import get_integrated_data, get_llenado_data, init_db
 from ui_helper import apply_premium_theme, render_top_navigation
+
+@st.cache_resource
+def setup_database():
+    init_db()
+    return True
+
+setup_database()
 
 st.set_page_config(
     page_title="Rendimiento de Coextruido",
