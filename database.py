@@ -289,10 +289,14 @@ def get_raw_table(table_name):
 
 def update_raw_table(table_name, df):
     engine = get_engine()
-    # En PostgreSQL, debemos pasar if_exists='replace'
-    # pero pandas a veces crea tablas sin primary key al reemplazar. 
-    # Lo dejamos así por ahora, que es estándar.
-    df.to_sql(table_name, engine, if_exists='replace', index=False)
+    # Usamos DELETE FROM en lugar de if_exists='replace' para no destruir
+    # las restricciones (UNIQUE, PRIMARY KEY) creadas por init_db()
+    with engine.begin() as conn:
+        from sqlalchemy import text
+        conn.execute(text(f"DELETE FROM {table_name}"))
+    
+    # Insertar los datos de nuevo (sin reemplazar la estructura de la tabla)
+    df.to_sql(table_name, engine, if_exists='append', index=False)
 
 if __name__ == "__main__":
     init_db()
