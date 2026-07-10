@@ -68,7 +68,7 @@ else:
             with col2:
                 total_lbs = filtered_df['peso_neto_etiqueta_lbs'].sum()
                 global_bolsas_lb = total_prod / total_lbs if total_lbs > 0 else 0
-                st.metric("Rendimiento Global", f"{global_bolsas_lb:.2f} Bolsas/lb")
+                st.metric("Rendimiento Global", f"{global_bolsas_lb:,.0f} Bolsas/lb")
             with col3:
                 promedio_merma = filtered_df['porcentaje_merma'].mean()
                 st.metric("Merma Promedio", f"{promedio_merma:.2f} %")
@@ -116,7 +116,7 @@ else:
                 with c2:
                     lbs_dia = df_dia['peso_neto_etiqueta_lbs'].sum()
                     rend_dia = prod_dia / lbs_dia if lbs_dia > 0 else 0
-                    st.metric(f"Rendimiento del Día", f"{rend_dia:.2f} Bolsas/lb")
+                    st.metric(f"Rendimiento del Día", f"{rend_dia:,.0f} Bolsas/lb")
                 with c3:
                     st.metric("Bobinas Procesadas", f"{df_dia['no_bobina'].nunique()}")
                     
@@ -141,7 +141,7 @@ else:
                 c1, c2, c3, c4 = st.columns(4)
                 c1.metric("Producto", f"{df_bob['producto']}")
                 c2.metric("Producción Real", f"{df_bob['produccion_real_estimada_und']:,.0f} und")
-                c3.metric("Rendimiento", f"{df_bob['bolsas_por_libra']:.2f} Bolsas/lb")
+                c3.metric("Rendimiento", f"{df_bob['bolsas_por_libra']:,.0f} Bolsas/lb")
                 c4.metric("Merma", f"{df_bob['porcentaje_merma']:.2f} %")
                 
                 st.markdown("##### Especificaciones Técnicas")
