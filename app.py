@@ -184,22 +184,37 @@ if not df_llenado.empty:
     mask_l = (df_llenado['fecha'].dt.date >= start_l) & (df_llenado['fecha'].dt.date <= end_l)
     df_llenado_filtrado = df_llenado.loc[mask_l]
     
-    col_l1, col_l2 = st.columns([1, 2])
-    with col_l1:
-        if not df_llenado_filtrado.empty:
-            df_prod_params = get_product_params()
-            productos_presentes = df_llenado_filtrado['producto'].unique()
-            for prod in productos_presentes:
+    if not df_llenado_filtrado.empty:
+        # Gráfica de caja (Box Plot) arriba a todo lo ancho
+        fig_llenado = px.box(
+            df_llenado_filtrado, 
+            x="producto", 
+            y="peso_g", 
+            color="producto",
+            title="Distribución de Pesos de Muestras",
+            color_discrete_sequence=["#0066CC", "#34C759", "#FF9500"]
+        )
+        fig_llenado.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+        st.plotly_chart(fig_llenado, use_container_width=True)
+        
+        # Tarjetas de productos a la par (columnas)
+        df_prod_params = get_product_params()
+        productos_presentes = df_llenado_filtrado['producto'].unique()
+        
+        cols_prods = st.columns(len(productos_presentes))
+        
+        for idx, prod in enumerate(productos_presentes):
+            with cols_prods[idx]:
+                st.markdown(f"### {prod}")
                 df_prod = df_llenado_filtrado[df_llenado_filtrado['producto'] == prod]
                 prom = df_prod['peso_g'].mean()
                 std_val = df_prod['peso_g'].std()
                 std_val = std_val if pd.notna(std_val) else 0.0
                 n = len(df_prod)
                 
-                st.markdown(f"**{prod}**")
                 m1, m2 = st.columns(2)
                 m1.metric("Promedio", f"{prom:.2f} g")
-                m2.metric("Desv. Estándar", f"{std_val:.3f} g")
+                m2.metric("Desv. Est.", f"{std_val:.3f} g")
                 
                 if not df_prod_params.empty and stats is not None:
                     row_param = df_prod_params[df_prod_params['producto'] == prod]
@@ -216,44 +231,40 @@ if not df_llenado.empty:
                                 
                                 if pd.notna(p_val) and p_val < alpha:
                                     if prom > mu0:
-                                        st.error(f"⚠️ **Sobredosificación Detectada** (p={p_val:.3f})\n\nEl peso es significativamente mayor al esperado. Ajustar máquina.")
+                                        st.error(f"⚠️ **Sobredosificación** (p={p_val:.3f})\n\nPeso mayor al esperado.")
                                     else:
-                                        st.warning(f"⚠️ **Subdosificación Detectada** (p={p_val:.3f})\n\nEl peso es significativamente menor al esperado. Riesgo de reclamos.")
+                                        st.warning(f"⚠️ **Subdosificación** (p={p_val:.3f})\n\nPeso menor al esperado.")
                                 else:
                                     p_val_display = p_val if pd.notna(p_val) else 1.0
-                                    st.success(f"✅ **Proceso Estable** (p={p_val_display:.3f})\n\nEl peso estadísticamente es igual al objetivo (95% confianza).")
+                                    st.success(f"✅ **Proceso Estable** (p={p_val_display:.3f})\n\nPeso igual al objetivo.")
                                     
-                                # Calcular margen aceptable (Confidence Interval)
+                                # Calcular margen aceptable
                                 t_crit = stats.t.ppf(0.975, n-1)
                                 sem = df_prod['peso_g'].sem()
                                 if pd.notna(sem) and sem > 0:
                                     margen_error = t_crit * sem
                                     rango_min = mu0 - margen_error
                                     rango_max = mu0 + margen_error
-                                    st.caption(f"📏 *Rango Aceptable (95% de confianza):* **{rango_min:.2f} g** a **{rango_max:.2f} g** (±{margen_error:.2f} g)")
+                                    st.caption(f"📏 *Rango (95% conf):* **{rango_min:.2f} g** a **{rango_max:.2f} g**")
                                     
                                     if std_val > 0:
                                         prob_cumplimiento = (1 - stats.norm.cdf(mu0, loc=prom, scale=std_val)) * 100
-                                        
                                         st.markdown("---")
-                                        st.markdown("**🛠️ Ingeniería de Calidad**")
-                                        st.markdown(f"Actualmente, se estima que el **{prob_cumplimiento:.1f}%** de la producción cumple con el peso objetivo ({mu0:.2f}g).")
+                                        st.markdown("**🛠️ Ing. Calidad**")
+                                        st.markdown(f"**{prob_cumplimiento:.1f}%** cumple con {mu0:.2f}g.")
                             else:
-                                st.info("ℹ️ Se requieren al menos 2 muestras para la prueba estadística.")
+                                st.info("ℹ️ Faltan muestras para prueba estadística.")
                                 
                 # --- Análisis vs Set-Point Máquina ---
                 if 'set_maquina_g' in df_prod.columns:
                     df_setpoint = df_prod[df_prod['set_maquina_g'].notna() & (df_prod['set_maquina_g'] > 0)]
                     if not df_setpoint.empty:
-                        st.markdown("**🔍 Análisis vs Set-Point Máquina**")
+                        st.markdown("**🔍 Análisis vs Máquina**")
                         prom_sp = df_setpoint['peso_g'].mean()
-                        std_sp = df_setpoint['peso_g'].std()
-                        std_sp = std_sp if pd.notna(std_sp) else 0.0
                         n_sp = len(df_setpoint)
-                        
                         setpoint_mean = df_setpoint['set_maquina_g'].mean()
                         
-                        st.caption(f"Evaluando solo {n_sp} muestra(s) que incluyen Set-Point configurado.")
+                        st.caption(f"Evaluando {n_sp} muestra(s) con Set-Point.")
                         
                         if n_sp >= 2 and stats is not None:
                             t_stat_sp, p_val_sp = stats.ttest_1samp(df_setpoint['peso_g'], setpoint_mean)
@@ -261,29 +272,17 @@ if not df_llenado.empty:
                             
                             if pd.notna(p_val_sp) and p_val_sp < alpha:
                                 if prom_sp > setpoint_mean:
-                                    st.error(f"⚠️ **Sobredosificación vs Máquina** (p={p_val_sp:.3f})\n\nEl peso promedio ({prom_sp:.2f}g) es mayor al Set-Point promedio de la máquina ({setpoint_mean:.2f}g).")
+                                    st.error(f"⚠️ **Sobre Máquina** (p={p_val_sp:.3f})\n\nPromedio ({prom_sp:.2f}g) > Set-Point ({setpoint_mean:.2f}g).")
                                 else:
-                                    st.warning(f"⚠️ **Subdosificación vs Máquina** (p={p_val_sp:.3f})\n\nEl peso promedio ({prom_sp:.2f}g) es menor al Set-Point promedio de la máquina ({setpoint_mean:.2f}g).")
+                                    st.warning(f"⚠️ **Sub Máquina** (p={p_val_sp:.3f})\n\nPromedio ({prom_sp:.2f}g) < Set-Point ({setpoint_mean:.2f}g).")
                             else:
                                 p_val_disp_sp = p_val_sp if pd.notna(p_val_sp) else 1.0
-                                st.success(f"✅ **Proceso Alineado a Máquina** (p={p_val_disp_sp:.3f})\n\nEstadísticamente el peso coincide con la configuración de la máquina ({setpoint_mean:.2f}g).")
+                                st.success(f"✅ **Alineado a Máquina** (p={p_val_disp_sp:.3f})\n\nCoincide con Set-Point ({setpoint_mean:.2f}g).")
                         else:
-                            st.info(f"ℹ️ Set-Point Promedio Máquina: **{setpoint_mean:.2f}g**. Se requieren al menos 2 muestras para la prueba estadística.")
+                            st.info(f"ℹ️ Set-Point Promedio: **{setpoint_mean:.2f}g**. Faltan muestras.")
                             
-                st.markdown("<hr style='border: 1px dashed #E5E5EA;'>", unsafe_allow_html=True)
-            
+        st.markdown("<hr style='border: 1px dashed #E5E5EA;'>", unsafe_allow_html=True)
+        st.subheader("Últimos Registros")
         st.dataframe(df_llenado_filtrado.sort_values(by=['fecha', 'producto', 'no_muestra'], ascending=False).head(10), use_container_width=True, hide_index=True)
-    with col_l2:
-        if not df_llenado_filtrado.empty:
-            fig_llenado = px.box(
-                df_llenado_filtrado, 
-                x="producto", 
-                y="peso_g", 
-                color="producto",
-                title="Distribución de Pesos de Muestras",
-                color_discrete_sequence=["#0066CC", "#34C759", "#FF9500"]
-            )
-            fig_llenado.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
-            st.plotly_chart(fig_llenado, use_container_width=True)
-        else:
-            st.info("No hay datos de llenado para el rango de fechas seleccionado.")
+    else:
+        st.info("No hay datos de llenado para el rango de fechas seleccionado.")
