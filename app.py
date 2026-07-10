@@ -104,9 +104,6 @@ else:
                     m6.metric("Espesor", f"{esp:.2f} µ" if pd.notna(esp) else "N/A")
             
             st.markdown("<br>", unsafe_allow_html=True)
-            st.subheader("Historial Global")
-            display_cols = ['fecha', 'producto', 'no_bobina', 'peso_neto_etiqueta_lbs', 'porcentaje_merma', 'produccion_real_estimada_und', 'bolsas_por_libra']
-            st.dataframe(filtered_df[display_cols], use_container_width=True, hide_index=True)
             
         with tab_diario:
             st.subheader("Análisis de Producción por Día")
