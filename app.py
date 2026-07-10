@@ -182,6 +182,14 @@ if not df_llenado.empty:
     
     col_l1, col_l2 = st.columns([1, 2])
     with col_l1:
+        if not df_llenado_filtrado.empty:
+            m1, m2 = st.columns(2)
+            prom = df_llenado_filtrado['peso_g'].mean()
+            std_val = df_llenado_filtrado['peso_g'].std()
+            std_val = std_val if pd.notna(std_val) else 0.0
+            m1.metric("Promedio General", f"{prom:.2f} g")
+            m2.metric("Desv. Estándar", f"{std_val:.3f} g")
+            
         st.dataframe(df_llenado_filtrado.sort_values(by=['fecha', 'producto', 'no_muestra'], ascending=False).head(10), use_container_width=True, hide_index=True)
     with col_l2:
         if not df_llenado_filtrado.empty:

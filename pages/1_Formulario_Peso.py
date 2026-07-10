@@ -26,24 +26,24 @@ with st.form("registro_peso"):
     
     col4, col5 = st.columns(2)
     with col4:
-        peso_neto_eti = st.number_input("Peso Neto Etiqueta (Lbs)", min_value=0.0, step=0.1)
-        peso_bascula = st.number_input("Peso Báscula (Lbs)", min_value=0.0, step=0.1)
-        merma_kg = st.number_input("Merma Total (Kg)", min_value=0.0, step=0.01)
+        peso_neto_eti = st.number_input("Peso Neto Etiqueta (Lbs)", min_value=0.0, step=0.1, value=None, placeholder="0.00")
+        peso_bascula = st.number_input("Peso Báscula (Lbs)", min_value=0.0, step=0.1, value=None, placeholder="0.00")
+        merma_kg = st.number_input("Merma Total (Kg)", min_value=0.0, step=0.01, value=None, placeholder="0.00")
         
     with col5:
-        peso_tubo = st.number_input("Peso Tubo Cartón (Kg)", min_value=0.0, step=0.1)
-        peso_bolsa_v = st.number_input("Peso Bolsa Vacía (g)", min_value=0.0, step=0.01)
+        peso_tubo = st.number_input("Peso Tubo Cartón (Kg)", min_value=0.0, step=0.1, value=None, placeholder="0.00")
+        peso_bolsa_v = st.number_input("Peso Bolsa Vacía (g)", min_value=0.0, step=0.01, value=None, placeholder="0.00")
         
     st.markdown("<hr style='border: 1px solid #E5E5EA;'>", unsafe_allow_html=True)
     st.subheader("Dimensiones de la Bolsa")
     col6, col7, col8 = st.columns(3)
     
     with col6:
-        ancho = st.number_input("Ancho de Bolsa (mm)", min_value=0.0, step=0.1)
+        ancho = st.number_input("Ancho de Bolsa (mm)", min_value=0.0, step=0.1, value=None, placeholder="0.00")
     with col7:
-        largo = st.number_input("Largo de Bolsa (mm)", min_value=0.0, step=0.1)
+        largo = st.number_input("Largo de Bolsa (mm)", min_value=0.0, step=0.1, value=None, placeholder="0.00")
     with col8:
-        mts_eti = st.number_input("Metros en Etiqueta", min_value=0.0, step=10.0)
+        mts_eti = st.number_input("Metros en Etiqueta", min_value=0.0, step=10.0, value=None, placeholder="0.00")
         
     submit = st.form_submit_button("Guardar Registro de Peso", type="primary")
 
@@ -55,14 +55,14 @@ if submit:
             'fecha': fecha.strftime('%Y-%m-%d'),
             'producto': producto,
             'no_bobina': no_bobina,
-            'peso_neto_etiqueta_lbs': peso_neto_eti,
-            'peso_bascula_lbs': peso_bascula,
-            'peso_tubo_carton_kg': peso_tubo,
-            'merma_kg': merma_kg,
-            'peso_bolsa_vacia_g': peso_bolsa_v,
-            'ancho_bolsa_mm': ancho,
-            'largo_bolsa_mm': largo,
-            'metros_etiqueta': mts_eti
+            'peso_neto_etiqueta_lbs': peso_neto_eti or 0.0,
+            'peso_bascula_lbs': peso_bascula or 0.0,
+            'peso_tubo_carton_kg': peso_tubo or 0.0,
+            'merma_kg': merma_kg or 0.0,
+            'peso_bolsa_vacia_g': peso_bolsa_v or 0.0,
+            'ancho_bolsa_mm': ancho or 0.0,
+            'largo_bolsa_mm': largo or 0.0,
+            'metros_etiqueta': mts_eti or 0.0
         }
         
         try:

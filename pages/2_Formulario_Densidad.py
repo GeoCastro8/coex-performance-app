@@ -38,24 +38,24 @@ with st.form("registro_densidad"):
     
     col3, col4 = st.columns(2)
     with col3:
-        peso_g = st.number_input("Peso (g)", min_value=0.0, step=0.01, format="%.4f")
+        peso_g = st.number_input("Peso (g)", min_value=0.0, step=0.01, format="%.4f", value=None, placeholder="0.0000")
     with col4:
-        area_cm2 = st.number_input("Área (cm²)", min_value=0.0, step=1.0)
+        area_cm2 = st.number_input("Área (cm²)", min_value=0.0, step=1.0, value=None, placeholder="0.00")
         
     st.markdown("<hr style='border: 1px solid #E5E5EA;'>", unsafe_allow_html=True)
     st.subheader("Mediciones de Espesor (mm)")
     
     e1, e2, e3, e4, e5 = st.columns(5)
     with e1:
-        espesor_a = st.number_input("A", min_value=0.0, step=0.01, format="%.3f")
+        espesor_a = st.number_input("A", min_value=0.0, step=0.01, format="%.3f", value=None, placeholder="0.000")
     with e2:
-        espesor_b = st.number_input("B", min_value=0.0, step=0.01, format="%.3f")
+        espesor_b = st.number_input("B", min_value=0.0, step=0.01, format="%.3f", value=None, placeholder="0.000")
     with e3:
-        espesor_c = st.number_input("C", min_value=0.0, step=0.01, format="%.3f")
+        espesor_c = st.number_input("C", min_value=0.0, step=0.01, format="%.3f", value=None, placeholder="0.000")
     with e4:
-        espesor_d = st.number_input("D", min_value=0.0, step=0.01, format="%.3f")
+        espesor_d = st.number_input("D", min_value=0.0, step=0.01, format="%.3f", value=None, placeholder="0.000")
     with e5:
-        espesor_e = st.number_input("E", min_value=0.0, step=0.01, format="%.3f")
+        espesor_e = st.number_input("E", min_value=0.0, step=0.01, format="%.3f", value=None, placeholder="0.000")
         
     submit = st.form_submit_button("Guardar Registro de Densidad", type="primary", disabled=df_bobinas.empty)
 
@@ -63,13 +63,13 @@ if submit and not df_bobinas.empty and no_bobina_real:
     data = {
         'fecha': fecha.strftime('%Y-%m-%d'),
         'no_bobina': no_bobina_real,
-        'peso_g': peso_g,
-        'area_cm2': area_cm2,
-        'espesor_a': espesor_a,
-        'espesor_b': espesor_b,
-        'espesor_c': espesor_c,
-        'espesor_d': espesor_d,
-        'espesor_e': espesor_e
+        'peso_g': peso_g or 0.0,
+        'area_cm2': area_cm2 or 0.0,
+        'espesor_a': espesor_a or 0.0,
+        'espesor_b': espesor_b or 0.0,
+        'espesor_c': espesor_c or 0.0,
+        'espesor_d': espesor_d or 0.0,
+        'espesor_e': espesor_e or 0.0
     }
     
     try:

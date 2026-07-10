@@ -26,19 +26,20 @@ with st.form("registro_llenado"):
     with col3:
         producto = st.selectbox("Producto Evaluado", ["Aguazul", "Montana Manzana", "Montana Naranja"])
     with col4:
-        peso_g = st.number_input("Peso de la Muestra (g)", min_value=0.0, step=0.1)
+        peso_g = st.number_input("Peso de la Muestra (g)", min_value=0.0, step=0.1, value=None, placeholder="0.00")
         
     submit = st.form_submit_button("Registrar Muestra", type="primary")
 
 if submit:
-    if peso_g <= 0:
+    peso_g_val = peso_g or 0.0
+    if peso_g_val <= 0:
         st.error("Por favor, ingresa un peso válido mayor a 0.")
     else:
         data = {
             'fecha': fecha.strftime('%Y-%m-%d'),
             'producto': producto,
             'no_muestra': no_muestra,
-            'peso_g': peso_g
+            'peso_g': peso_g_val
         }
         
         try:
