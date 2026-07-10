@@ -245,7 +245,7 @@ if not df_llenado.empty:
                                     margen_error = t_crit * sem
                                     rango_min = mu0 - margen_error
                                     rango_max = mu0 + margen_error
-                                    st.caption(f"📏 *Rango (95% conf):* **{rango_min:.2f} g** a **{rango_max:.2f} g**")
+                                    st.caption(f"📏 *Rango Aceptable (95% de confianza):* **{rango_min:.2f} g** a **{rango_max:.2f} g** (±{margen_error:.2f} g)")
                                     
                                     if std_val > 0:
                                         prob_cumplimiento = (1 - stats.norm.cdf(mu0, loc=prom, scale=std_val)) * 100
