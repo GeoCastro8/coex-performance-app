@@ -291,9 +291,5 @@ if not df_llenado.empty:
                                 st.success(f"✅ **Proceso Alineado a Máquina** (p={p_val_disp_sp:.3f})\n\nEstadísticamente el peso coincide con la configuración de la máquina ({setpoint_mean:.2f}g).")
                         else:
                             st.info(f"ℹ️ Set-Point Promedio Máquina: **{setpoint_mean:.2f}g**. Se requieren al menos 2 muestras para la prueba estadística.")
-                            
-        st.markdown("<hr style='border: 1px dashed #E5E5EA;'>", unsafe_allow_html=True)
-        st.subheader("Últimos Registros")
-        st.dataframe(df_llenado_filtrado.sort_values(by=['fecha', 'producto', 'no_muestra'], ascending=False).head(10), use_container_width=True, hide_index=True)
     else:
         st.info("No hay datos de llenado para el rango de fechas seleccionado.")
