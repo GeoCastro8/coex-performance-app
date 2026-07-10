@@ -234,15 +234,10 @@ if not df_llenado.empty:
                                     
                                     if std_val > 0:
                                         prob_cumplimiento = (1 - stats.norm.cdf(mu0, loc=prom, scale=std_val)) * 100
-                                        z_95 = stats.norm.ppf(0.95)
-                                        setpoint_95 = mu0 + (z_95 * std_val)
-                                        z_99 = stats.norm.ppf(0.99)
-                                        setpoint_99 = mu0 + (z_99 * std_val)
                                         
                                         st.markdown("---")
-                                        st.markdown("**🛠️ Ingeniería de Calidad (Recomendación de Ajuste)**")
+                                        st.markdown("**🛠️ Ingeniería de Calidad**")
                                         st.markdown(f"Actualmente, se estima que el **{prob_cumplimiento:.1f}%** de la producción cumple con el peso objetivo ({mu0:.2f}g).")
-                                        st.info(f"💡 Para asegurar que el **95%** de la producción sea igual o mayor a {mu0:.2f}g, debes ajustar el objetivo de llenado en máquina a: **{setpoint_95:.2f} g** *(Objetivo 99%: {setpoint_99:.2f} g)*")
                             else:
                                 st.info("ℹ️ Se requieren al menos 2 muestras para la prueba estadística.")
                 st.markdown("<hr style='border: 1px dashed #E5E5EA;'>", unsafe_allow_html=True)
