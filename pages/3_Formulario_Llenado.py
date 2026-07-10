@@ -1,6 +1,6 @@
 import streamlit as st
 import datetime
-from database import insert_llenado, get_next_llenado_muestra
+from database import insert_llenado, get_next_llenado_muestra, get_last_set_maquina
 from ui_helper import apply_premium_theme, render_top_navigation
 
 st.set_page_config(page_title="Ingreso de Llenado", page_icon="💧", layout="wide")
@@ -16,7 +16,9 @@ fecha = st.date_input("Fecha de Producción", datetime.date.today())
 with st.form("registro_llenado"):
     st.subheader("Datos de la Muestra")
     
-    next_muestra = get_next_llenado_muestra(fecha.strftime('%Y-%m-%d'))
+    fecha_str = fecha.strftime('%Y-%m-%d')
+    next_muestra = get_next_llenado_muestra(fecha_str)
+    last_set_maquina = get_last_set_maquina(fecha_str)
     
     col1, col2 = st.columns(2)
     with col1:
@@ -28,7 +30,7 @@ with st.form("registro_llenado"):
     with col3:
         peso_g = st.number_input("Peso de la Muestra (g)", min_value=0.0, step=0.1, value=None, placeholder="0.00")
     with col4:
-        set_maquina_g = st.number_input("Set-Point de Máquina (g)", min_value=0.0, step=0.1, value=None, placeholder="0.00")
+        set_maquina_g = st.number_input("Set-Point de Máquina (g)", min_value=0.0, step=0.1, value=last_set_maquina, placeholder="0.00")
         
     submit = st.form_submit_button("Registrar Muestra", type="primary")
 
