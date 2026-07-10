@@ -18,7 +18,7 @@ with st.form("registro_llenado"):
         fecha = st.date_input("Fecha de Producción", datetime.date.today())
     with col2:
         next_muestra = get_next_llenado_muestra(fecha.strftime('%Y-%m-%d'))
-        no_muestra = st.number_input("Número de Muestra", min_value=1, step=1, value=next_muestra)
+        no_muestra = st.number_input("Número de Muestra", min_value=1, step=1, value=next_muestra, key=f"muestra_{fecha}")
         
     st.markdown("<hr style='border: 1px solid #E5E5EA;'>", unsafe_allow_html=True)
     st.subheader("Detalles del Producto")
