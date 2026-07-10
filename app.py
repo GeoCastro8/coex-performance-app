@@ -230,7 +230,7 @@ if not df_llenado.empty:
                                     margen_error = t_crit * sem
                                     rango_min = mu0 - margen_error
                                     rango_max = mu0 + margen_error
-                                    st.caption(f"📏 *Rango Aceptable (95%):* **{rango_min:.2f} g** a **{rango_max:.2f} g** (±{margen_error:.2f} g)")
+                                    st.caption(f"📏 *Rango Aceptable (95% de confianza):* **{rango_min:.2f} g** a **{rango_max:.2f} g** (±{margen_error:.2f} g)")
                             else:
                                 st.info("ℹ️ Se requieren al menos 2 muestras para la prueba estadística.")
                 st.markdown("<hr style='border: 1px dashed #E5E5EA;'>", unsafe_allow_html=True)
