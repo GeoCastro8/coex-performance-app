@@ -277,6 +277,9 @@ def get_integrated_data():
     df['produccion_real_estimada_und'] = df['produccion_teorica_und'] * (1 - (df['porcentaje_merma'] / 100))
     df['peso_utilizado_kg'] = (df['peso_bolsa_vacia_g'] * df['produccion_teorica_und']) / 1000
     
+    # Rendimiento Gerencial: Bolsas por libra
+    df['bolsas_por_libra'] = df.apply(lambda row: row['produccion_real_estimada_und'] / row['peso_neto_etiqueta_lbs'] if pd.notnull(row.get('peso_neto_etiqueta_lbs')) and row['peso_neto_etiqueta_lbs'] > 0 else 0, axis=1)
+    
     return df
 
 def get_llenado_data():

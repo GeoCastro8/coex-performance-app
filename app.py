@@ -57,58 +57,102 @@ else:
     if filtered_df.empty:
         st.warning("No hay datos para los filtros seleccionados.")
     else:
-        # KPIs
-        col1, col2, col3, col4 = st.columns(4)
+        tab_global, tab_diario, tab_bobina = st.tabs(["🌎 Resumen Global", "📅 Análisis Diario", "🧵 Detalle por Bobina"])
         
-        with col1:
-            total_prod = filtered_df['produccion_teorica_und'].sum()
-            st.metric("Total Producción Teórica", f"{total_prod:,.0f}")
+        with tab_global:
+            # Global KPIs
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                total_prod = filtered_df['produccion_real_estimada_und'].sum()
+                st.metric("Total Prod. Real (und)", f"{total_prod:,.0f}")
+            with col2:
+                total_lbs = filtered_df['peso_neto_etiqueta_lbs'].sum()
+                global_bolsas_lb = total_prod / total_lbs if total_lbs > 0 else 0
+                st.metric("Rendimiento Global", f"{global_bolsas_lb:.2f} Bolsas/lb")
+            with col3:
+                promedio_merma = filtered_df['porcentaje_merma'].mean()
+                st.metric("Merma Promedio", f"{promedio_merma:.2f} %")
+            with col4:
+                total_bobinas = filtered_df['no_bobina'].nunique()
+                st.metric("Bobinas Evaluadas", f"{total_bobinas}")
+                
+            st.markdown("<br>", unsafe_allow_html=True)
             
-        with col2:
-            promedio_merma = filtered_df['porcentaje_merma'].mean()
-            st.metric("Merma Promedio", f"{promedio_merma:.2f} %")
+            # Global Charts
+            col_chart1, col_chart2 = st.columns(2)
+            with col_chart1:
+                fig_prod = px.bar(
+                    filtered_df, x="fecha", y="produccion_real_estimada_und", color="producto", 
+                    title="Producción Real (und)", color_discrete_sequence=["#0066CC", "#5AC8FA", "#34C759"]
+                )
+                fig_prod.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+                st.plotly_chart(fig_prod, use_container_width=True)
+                
+            with col_chart2:
+                fig_rend = px.scatter(
+                    filtered_df, x="fecha", y="bolsas_por_libra", color="producto", size="peso_bruto_kg",
+                    title="Rendimiento (Bolsas/lb) por Fecha", color_discrete_sequence=["#FF3B30", "#FF9500", "#FFCC00"]
+                )
+                fig_rend.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+                st.plotly_chart(fig_rend, use_container_width=True)
+                
+            st.subheader("Historial Global")
+            display_cols = ['fecha', 'producto', 'no_bobina', 'peso_neto_etiqueta_lbs', 'porcentaje_merma', 'produccion_real_estimada_und', 'bolsas_por_libra']
+            st.dataframe(filtered_df[display_cols], use_container_width=True, hide_index=True)
             
-        with col3:
-            total_bobinas = filtered_df['no_bobina'].nunique()
-            st.metric("Bobinas Evaluadas", f"{total_bobinas}")
-            
-        with col4:
-            prom_rendimiento = filtered_df['produccion_real_estimada_und'].sum() / total_prod if total_prod > 0 else 0
-            st.metric("Rendimiento Estimado", f"{prom_rendimiento*100:.1f} %")
-            
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        # Gráficos
-        col_chart1, col_chart2 = st.columns(2)
-        
-        with col_chart1:
-            fig_prod = px.bar(
-                filtered_df, 
-                x="fecha", 
-                y="produccion_real_estimada_und", 
-                color="producto", 
-                title="Producción Estimada (und)",
-                color_discrete_sequence=["#0066CC", "#5AC8FA", "#34C759"]
-            )
-            fig_prod.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", font=dict(family="sans-serif"))
-            st.plotly_chart(fig_prod, use_container_width=True)
-            
-        with col_chart2:
-            fig_merma = px.scatter(
-                filtered_df, 
-                x="fecha", 
-                y="porcentaje_merma", 
-                color="producto",
-                size="peso_bruto_kg",
-                title="% Merma por Bobina",
-                color_discrete_sequence=["#FF3B30", "#FF9500", "#FFCC00"]
-            )
-            fig_merma.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", font=dict(family="sans-serif"))
-            st.plotly_chart(fig_merma, use_container_width=True)
-            
-        st.subheader("Análisis de Historial Combinado")
-        display_cols = ['fecha', 'producto', 'no_bobina', 'peso_bruto_kg', 'densidad_g_cm3', 'porcentaje_merma', 'metros_bobina', 'produccion_real_estimada_und']
-        st.dataframe(filtered_df[display_cols], use_container_width=True, hide_index=True)
+        with tab_diario:
+            st.subheader("Análisis de Producción por Día")
+            fechas_disponibles = sorted(filtered_df['fecha'].dt.date.unique(), reverse=True)
+            if not fechas_disponibles:
+                st.info("No hay fechas en el rango actual.")
+            else:
+                dia_seleccionado = st.selectbox("Selecciona un día de producción:", fechas_disponibles)
+                df_dia = filtered_df[filtered_df['fecha'].dt.date == dia_seleccionado]
+                
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    prod_dia = df_dia['produccion_real_estimada_und'].sum()
+                    st.metric(f"Producción del Día", f"{prod_dia:,.0f} und")
+                with c2:
+                    lbs_dia = df_dia['peso_neto_etiqueta_lbs'].sum()
+                    rend_dia = prod_dia / lbs_dia if lbs_dia > 0 else 0
+                    st.metric(f"Rendimiento del Día", f"{rend_dia:.2f} Bolsas/lb")
+                with c3:
+                    st.metric("Bobinas Procesadas", f"{df_dia['no_bobina'].nunique()}")
+                    
+                st.markdown("<br>", unsafe_allow_html=True)
+                fig_dia = px.bar(
+                    df_dia, x="no_bobina", y="bolsas_por_libra", color="producto",
+                    title=f"Rendimiento por Bobina - {dia_seleccionado}",
+                    color_discrete_sequence=["#0066CC", "#34C759", "#FF9500"]
+                )
+                fig_dia.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+                st.plotly_chart(fig_dia, use_container_width=True)
+                
+        with tab_bobina:
+            st.subheader("Ficha Técnica por Bobina")
+            bobinas_disp = sorted(filtered_df['no_bobina'].unique())
+            if not bobinas_disp:
+                st.info("No hay bobinas en el rango actual.")
+            else:
+                bob_sel = st.selectbox("Selecciona una bobina:", bobinas_disp)
+                df_bob = filtered_df[filtered_df['no_bobina'] == bob_sel].iloc[0]
+                
+                c1, c2, c3, c4 = st.columns(4)
+                c1.metric("Producto", f"{df_bob['producto']}")
+                c2.metric("Producción Real", f"{df_bob['produccion_real_estimada_und']:,.0f} und")
+                c3.metric("Rendimiento", f"{df_bob['bolsas_por_libra']:.2f} Bolsas/lb")
+                c4.metric("Merma", f"{df_bob['porcentaje_merma']:.2f} %")
+                
+                st.markdown("##### Especificaciones Técnicas")
+                c_t1, c_t2, c_t3 = st.columns(3)
+                c_t1.write(f"**Peso Etiqueta:** {df_bob.get('peso_neto_etiqueta_lbs', 0)} lbs")
+                c_t1.write(f"**Peso Báscula:** {df_bob.get('peso_bascula_lbs', 0)} lbs")
+                
+                c_t2.write(f"**Densidad:** {df_bob.get('densidad_g_cm3', 0):.4f} g/cm3")
+                c_t2.write(f"**Espesor Promedio:** {df_bob.get('espesor_micras', 0):.2f} micras")
+                
+                c_t3.write(f"**Dimensiones:** {df_bob.get('ancho_bolsa_mm', 0)} x {df_bob.get('largo_bolsa_mm', 0)} mm")
 
 # Sección de Llenado
 df_llenado = get_llenado_data()
