@@ -1,7 +1,14 @@
 import streamlit as st
 import datetime
-from database import insert_llenado, get_next_llenado_muestra, get_last_set_maquina
+from database import insert_llenado, get_next_llenado_muestra, get_last_set_maquina, init_db
 from ui_helper import apply_premium_theme, render_top_navigation
+
+@st.cache_resource
+def setup_database():
+    init_db()
+    return True
+
+setup_database()
 
 st.set_page_config(page_title="Ingreso de Llenado", page_icon="💧", layout="wide")
 apply_premium_theme()

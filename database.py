@@ -266,14 +266,17 @@ def get_next_llenado_muestra(fecha_str):
     return 1
 
 def get_last_set_maquina(fecha_str):
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT set_maquina_g FROM llenado WHERE fecha = %s AND set_maquina_g IS NOT NULL ORDER BY id DESC LIMIT 1", (fecha_str,))
-    row = cursor.fetchone()
-    cursor.close()
-    conn.close()
-    if row and row[0] is not None:
-        return float(row[0])
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT set_maquina_g FROM llenado WHERE fecha = %s AND set_maquina_g IS NOT NULL ORDER BY id DESC LIMIT 1", (fecha_str,))
+        row = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if row and row[0] is not None:
+            return float(row[0])
+    except Exception:
+        pass
     return None
 
 def get_integrated_data():
