@@ -65,20 +65,30 @@ else:
         
         with tab_global:
             # Global KPIs
-            col1, col2, col3, col4 = st.columns(4)
-            with col1:
+            c1, c2, c3 = st.columns(3)
+            with c1:
                 total_prod = filtered_df['produccion_real_estimada_und'].sum()
                 st.metric("Total Prod. Real (und)", f"{total_prod:,.0f}")
-            with col2:
+            with c2:
                 total_lbs = filtered_df['peso_neto_etiqueta_lbs'].sum()
                 global_bolsas_lb = total_prod / total_lbs if total_lbs > 0 else 0
                 st.metric("Rendimiento Global", f"{global_bolsas_lb:,.0f} Bolsas/lb")
-            with col3:
+            with c3:
                 promedio_merma = filtered_df['porcentaje_merma'].mean()
                 st.metric("Merma Promedio", f"{promedio_merma:.2f} %")
-            with col4:
+                
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            c4, c5, c6 = st.columns(3)
+            with c4:
                 total_bobinas = filtered_df['no_bobina'].nunique()
                 st.metric("Bobinas Evaluadas", f"{total_bobinas}")
+            with c5:
+                prom_dens = filtered_df['densidad_g_cm3'].mean()
+                st.metric("Densidad Promedio", f"{prom_dens:.4f} g/cm3" if pd.notna(prom_dens) else "N/A")
+            with c6:
+                prom_esp = filtered_df['espesor_micras'].mean()
+                st.metric("Espesor Promedio", f"{prom_esp:.2f} µ" if pd.notna(prom_esp) else "N/A")
                 
             st.markdown("<br>", unsafe_allow_html=True)
             
@@ -123,6 +133,16 @@ else:
                     st.metric(f"Rendimiento del Día", f"{rend_dia:,.0f} Bolsas/lb")
                 with c3:
                     st.metric("Bobinas Procesadas", f"{df_dia['no_bobina'].nunique()}")
+                    
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                c4, c5, _ = st.columns(3)
+                with c4:
+                    dens_dia = df_dia['densidad_g_cm3'].mean()
+                    st.metric("Densidad Promedio", f"{dens_dia:.4f} g/cm3" if pd.notna(dens_dia) else "N/A")
+                with c5:
+                    esp_dia = df_dia['espesor_micras'].mean()
+                    st.metric("Espesor Promedio", f"{esp_dia:.2f} µ" if pd.notna(esp_dia) else "N/A")
                     
                 st.markdown("<br>", unsafe_allow_html=True)
                 fig_dia = px.bar(
