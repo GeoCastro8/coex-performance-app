@@ -1,8 +1,12 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from database import get_integrated_data, get_llenado_data, init_db
+from database import get_integrated_data, get_llenado_data, get_product_params, init_db
 from ui_helper import apply_premium_theme, render_top_navigation
+try:
+    from scipy import stats
+except ImportError:
+    stats = None
 
 @st.cache_resource
 def setup_database():
@@ -183,17 +187,44 @@ if not df_llenado.empty:
     col_l1, col_l2 = st.columns([1, 2])
     with col_l1:
         if not df_llenado_filtrado.empty:
+            df_prod_params = get_product_params()
             productos_presentes = df_llenado_filtrado['producto'].unique()
             for prod in productos_presentes:
                 df_prod = df_llenado_filtrado[df_llenado_filtrado['producto'] == prod]
                 prom = df_prod['peso_g'].mean()
                 std_val = df_prod['peso_g'].std()
                 std_val = std_val if pd.notna(std_val) else 0.0
+                n = len(df_prod)
                 
                 st.markdown(f"**{prod}**")
                 m1, m2 = st.columns(2)
                 m1.metric("Promedio", f"{prom:.2f} g")
                 m2.metric("Desv. Estándar", f"{std_val:.3f} g")
+                
+                if not df_prod_params.empty and stats is not None:
+                    row_param = df_prod_params[df_prod_params['producto'] == prod]
+                    if not row_param.empty:
+                        peso_liq = float(row_param.iloc[0]['peso_producto_g'])
+                        peso_bol = float(row_param.iloc[0]['peso_bolsa_g'])
+                        mu0 = peso_liq + peso_bol
+                        
+                        if mu0 > 0:
+                            st.caption(f"⚖️ *Objetivo Teórico:* {mu0:.2f} g")
+                            if n >= 2:
+                                t_stat, p_val = stats.ttest_1samp(df_prod['peso_g'], mu0)
+                                alpha = 0.05
+                                
+                                if pd.notna(p_val) and p_val < alpha:
+                                    if prom > mu0:
+                                        st.error(f"⚠️ **Sobredosificación Detectada** (p={p_val:.3f})\n\nEl peso es significativamente mayor al esperado. Ajustar máquina.")
+                                    else:
+                                        st.warning(f"⚠️ **Subdosificación Detectada** (p={p_val:.3f})\n\nEl peso es significativamente menor al esperado. Riesgo de reclamos.")
+                                else:
+                                    p_val_display = p_val if pd.notna(p_val) else 1.0
+                                    st.success(f"✅ **Proceso Estable** (p={p_val_display:.3f})\n\nEl peso estadísticamente es igual al objetivo (95% confianza).")
+                            else:
+                                st.info("ℹ️ Se requieren al menos 2 muestras para la prueba estadística.")
+                st.markdown("<hr style='border: 1px dashed #E5E5EA;'>", unsafe_allow_html=True)
             
         st.dataframe(df_llenado_filtrado.sort_values(by=['fecha', 'producto', 'no_muestra'], ascending=False).head(10), use_container_width=True, hide_index=True)
     with col_l2:

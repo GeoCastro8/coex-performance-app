@@ -82,16 +82,33 @@ def init_db():
         )
     ''')
     
+    # Tabla de Parámetros por Producto
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS parametros_producto (
+            id SERIAL PRIMARY KEY,
+            producto TEXT UNIQUE,
+            peso_producto_g REAL,
+            peso_bolsa_g REAL
+        )
+    ''')
+    
     # Seed de configuración
     cursor.execute('SELECT COUNT(*) FROM configuracion')
     if cursor.fetchone()[0] == 0:
         cursor.execute("INSERT INTO configuracion (id, require_auth, password) VALUES (1, 0, 'admin123')")
         
-    # Seed de parámetros
+    # Seed de parámetros globales
     cursor.execute('SELECT COUNT(*) FROM parametros')
     if cursor.fetchone()[0] == 0:
         cursor.execute("INSERT INTO parametros (id, factor_kg, factor_micras, multiplicador_prod) VALUES (1, 0.453592, 10000.0, 1000.0)")
         
+    # Seed de parámetros por producto
+    cursor.execute('SELECT COUNT(*) FROM parametros_producto')
+    if cursor.fetchone()[0] == 0:
+        productos_iniciales = ["Aguazul", "Montana Manzana", "Montana Naranja"]
+        for p in productos_iniciales:
+            cursor.execute("INSERT INTO parametros_producto (producto, peso_producto_g, peso_bolsa_g) VALUES (%s, 0.0, 0.0)", (p,))
+            
     conn.commit()
     cursor.close()
     conn.close()
@@ -131,6 +148,22 @@ def update_params(factor_kg, factor_micras, multiplicador_prod):
     cursor = conn.cursor()
     cursor.execute("UPDATE parametros SET factor_kg=%s, factor_micras=%s, multiplicador_prod=%s WHERE id=1", 
                    (factor_kg, factor_micras, multiplicador_prod))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+def get_product_params():
+    engine = get_engine()
+    return pd.read_sql_query("SELECT * FROM parametros_producto ORDER BY producto", engine)
+
+def update_product_params(producto, peso_producto_g, peso_bolsa_g):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        UPDATE parametros_producto 
+        SET peso_producto_g = %s, peso_bolsa_g = %s 
+        WHERE producto = %s
+    ''', (peso_producto_g, peso_bolsa_g, producto))
     conn.commit()
     cursor.close()
     conn.close()
