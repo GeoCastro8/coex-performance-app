@@ -251,7 +251,7 @@ if not df_llenado.empty:
                                         prob_cumplimiento = (1 - stats.norm.cdf(mu0, loc=prom, scale=std_val)) * 100
                                         st.markdown("---")
                                         st.markdown("**🛠️ Ing. Calidad**")
-                                        st.markdown(f"**{prob_cumplimiento:.1f}%** cumple con {mu0:.2f}g.")
+                                        st.caption(f"El **{prob_cumplimiento:.1f}%** de la producción tiene un peso igual o mayor a **{mu0:.2f}g**.")
                             else:
                                 st.info("ℹ️ Faltan muestras para prueba estadística.")
                                 
