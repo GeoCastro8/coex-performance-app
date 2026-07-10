@@ -240,6 +240,36 @@ if not df_llenado.empty:
                                         st.markdown(f"Actualmente, se estima que el **{prob_cumplimiento:.1f}%** de la producción cumple con el peso objetivo ({mu0:.2f}g).")
                             else:
                                 st.info("ℹ️ Se requieren al menos 2 muestras para la prueba estadística.")
+                                
+                # --- Análisis vs Set-Point Máquina ---
+                if 'set_maquina_g' in df_prod.columns:
+                    df_setpoint = df_prod[df_prod['set_maquina_g'].notna() & (df_prod['set_maquina_g'] > 0)]
+                    if not df_setpoint.empty:
+                        st.markdown("**🔍 Análisis vs Set-Point Máquina**")
+                        prom_sp = df_setpoint['peso_g'].mean()
+                        std_sp = df_setpoint['peso_g'].std()
+                        std_sp = std_sp if pd.notna(std_sp) else 0.0
+                        n_sp = len(df_setpoint)
+                        
+                        setpoint_mean = df_setpoint['set_maquina_g'].mean()
+                        
+                        st.caption(f"Evaluando solo {n_sp} muestra(s) que incluyen Set-Point configurado.")
+                        
+                        if n_sp >= 2 and stats is not None:
+                            t_stat_sp, p_val_sp = stats.ttest_1samp(df_setpoint['peso_g'], setpoint_mean)
+                            alpha = 0.05
+                            
+                            if pd.notna(p_val_sp) and p_val_sp < alpha:
+                                if prom_sp > setpoint_mean:
+                                    st.error(f"⚠️ **Sobredosificación vs Máquina** (p={p_val_sp:.3f})\n\nEl peso promedio ({prom_sp:.2f}g) es mayor al Set-Point promedio de la máquina ({setpoint_mean:.2f}g).")
+                                else:
+                                    st.warning(f"⚠️ **Subdosificación vs Máquina** (p={p_val_sp:.3f})\n\nEl peso promedio ({prom_sp:.2f}g) es menor al Set-Point promedio de la máquina ({setpoint_mean:.2f}g).")
+                            else:
+                                p_val_disp_sp = p_val_sp if pd.notna(p_val_sp) else 1.0
+                                st.success(f"✅ **Proceso Alineado a Máquina** (p={p_val_disp_sp:.3f})\n\nEstadísticamente el peso coincide con la configuración de la máquina ({setpoint_mean:.2f}g).")
+                        else:
+                            st.info(f"ℹ️ Set-Point Promedio Máquina: **{setpoint_mean:.2f}g**. Se requieren al menos 2 muestras para la prueba estadística.")
+                            
                 st.markdown("<hr style='border: 1px dashed #E5E5EA;'>", unsafe_allow_html=True)
             
         st.dataframe(df_llenado_filtrado.sort_values(by=['fecha', 'producto', 'no_muestra'], ascending=False).head(10), use_container_width=True, hide_index=True)

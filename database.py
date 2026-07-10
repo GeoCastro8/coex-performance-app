@@ -63,6 +63,13 @@ def init_db():
         )
     ''')
     
+    # Intento añadir la nueva columna 'set_maquina_g' por si no existe
+    try:
+        cursor.execute('ALTER TABLE llenado ADD COLUMN set_maquina_g REAL')
+        conn.commit()
+    except Exception:
+        conn.rollback()
+
     # Tabla de Configuración (Auth)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS configuracion (
@@ -238,10 +245,10 @@ def insert_llenado(data):
     cursor = conn.cursor()
     cursor.execute('''
         INSERT INTO llenado (
-            fecha, producto, no_muestra, peso_g
-        ) VALUES (%s, %s, %s, %s)
+            fecha, producto, no_muestra, peso_g, set_maquina_g
+        ) VALUES (%s, %s, %s, %s, %s)
     ''', (
-        data['fecha'], data['producto'], data['no_muestra'], data['peso_g']
+        data['fecha'], data['producto'], data['no_muestra'], data['peso_g'], data.get('set_maquina_g', None)
     ))
     conn.commit()
     cursor.close()
