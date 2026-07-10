@@ -1,6 +1,6 @@
 import streamlit as st
 import datetime
-from database import insert_llenado
+from database import insert_llenado, get_next_llenado_muestra
 from ui_helper import apply_premium_theme, render_top_navigation
 
 st.set_page_config(page_title="Ingreso de Llenado", page_icon="💧", layout="wide")
@@ -17,7 +17,8 @@ with st.form("registro_llenado"):
     with col1:
         fecha = st.date_input("Fecha de Producción", datetime.date.today())
     with col2:
-        no_muestra = st.number_input("Número de Muestra", min_value=1, step=1)
+        next_muestra = get_next_llenado_muestra(fecha.strftime('%Y-%m-%d'))
+        no_muestra = st.number_input("Número de Muestra", min_value=1, step=1, value=next_muestra)
         
     st.markdown("<hr style='border: 1px solid #E5E5EA;'>", unsafe_allow_html=True)
     st.subheader("Detalles del Producto")

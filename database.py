@@ -214,6 +214,17 @@ def insert_llenado(data):
     cursor.close()
     conn.close()
 
+def get_next_llenado_muestra(fecha_str):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT MAX(no_muestra) FROM llenado WHERE fecha = %s", (fecha_str,))
+    row = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    if row and row[0] is not None:
+        return int(row[0]) + 1
+    return 1
+
 def get_integrated_data():
     engine = get_engine()
     
