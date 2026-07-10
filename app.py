@@ -222,6 +222,15 @@ if not df_llenado.empty:
                                 else:
                                     p_val_display = p_val if pd.notna(p_val) else 1.0
                                     st.success(f"✅ **Proceso Estable** (p={p_val_display:.3f})\n\nEl peso estadísticamente es igual al objetivo (95% confianza).")
+                                    
+                                # Calcular margen aceptable (Confidence Interval)
+                                t_crit = stats.t.ppf(0.975, n-1)
+                                sem = df_prod['peso_g'].sem()
+                                if pd.notna(sem) and sem > 0:
+                                    margen_error = t_crit * sem
+                                    rango_min = mu0 - margen_error
+                                    rango_max = mu0 + margen_error
+                                    st.caption(f"📏 *Rango Aceptable (95%):* **{rango_min:.2f} g** a **{rango_max:.2f} g** (±{margen_error:.2f} g)")
                             else:
                                 st.info("ℹ️ Se requieren al menos 2 muestras para la prueba estadística.")
                 st.markdown("<hr style='border: 1px dashed #E5E5EA;'>", unsafe_allow_html=True)
