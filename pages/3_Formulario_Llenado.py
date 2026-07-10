@@ -10,24 +10,21 @@ render_top_navigation()
 st.title("Control de Llenado")
 st.markdown("Registro de peso de muestras para cada producto de forma independiente.")
 
+st.subheader("Fecha de Registro")
+fecha = st.date_input("Fecha de Producción", datetime.date.today())
+
 with st.form("registro_llenado"):
     st.subheader("Datos de la Muestra")
+    
+    next_muestra = get_next_llenado_muestra(fecha.strftime('%Y-%m-%d'))
+    
     col1, col2 = st.columns(2)
-    
     with col1:
-        fecha = st.date_input("Fecha de Producción", datetime.date.today())
-    with col2:
-        next_muestra = get_next_llenado_muestra(fecha.strftime('%Y-%m-%d'))
         no_muestra = st.number_input("Número de Muestra", min_value=1, step=1, value=next_muestra, key=f"muestra_{fecha}")
-        
-    st.markdown("<hr style='border: 1px solid #E5E5EA;'>", unsafe_allow_html=True)
-    st.subheader("Detalles del Producto")
-    
-    col3, col4 = st.columns(2)
-    with col3:
+    with col2:
         producto = st.selectbox("Producto Evaluado", ["Aguazul", "Montana Manzana", "Montana Naranja"])
-    with col4:
-        peso_g = st.number_input("Peso de la Muestra (g)", min_value=0.0, step=0.1, value=None, placeholder="0.00")
+        
+    peso_g = st.number_input("Peso de la Muestra (g)", min_value=0.0, step=0.1, value=None, placeholder="0.00")
         
     submit = st.form_submit_button("Registrar Muestra", type="primary")
 
