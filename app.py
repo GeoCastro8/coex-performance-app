@@ -162,8 +162,22 @@ if not df_llenado.empty:
     
     df_llenado['fecha'] = pd.to_datetime(df_llenado['fecha'])
     
-    # Aplicar filtro de fecha a llenado tambien para consistencia
-    mask_l = (df_llenado['fecha'].dt.date >= start_date) & (df_llenado['fecha'].dt.date <= end_date)
+    # Crear un filtro de fecha independiente para Llenado
+    min_date_l = df_llenado['fecha'].min().date()
+    max_date_l = df_llenado['fecha'].max().date()
+    
+    if min_date_l == max_date_l:
+        start_l, end_l = min_date_l, max_date_l
+    else:
+        col_filtro, _ = st.columns([1, 3])
+        with col_filtro:
+            date_range_l = st.date_input("Rango de Fechas (Muestras)", [min_date_l, max_date_l], key="date_llenado")
+        if len(date_range_l) == 2:
+            start_l, end_l = date_range_l
+        else:
+            start_l, end_l = date_range_l[0], date_range_l[0]
+            
+    mask_l = (df_llenado['fecha'].dt.date >= start_l) & (df_llenado['fecha'].dt.date <= end_l)
     df_llenado_filtrado = df_llenado.loc[mask_l]
     
     col_l1, col_l2 = st.columns([1, 2])
