@@ -64,52 +64,46 @@ else:
         tab_global, tab_diario, tab_bobina = st.tabs(["🌎 Resumen Global", "📅 Análisis Diario", "🧵 Detalle por Bobina"])
         
         with tab_global:
-            # Global KPIs
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                total_prod = filtered_df['produccion_real_estimada_und'].sum()
-                st.metric("Total Prod. Real (und)", f"{total_prod:,.0f}")
-            with c2:
-                total_lbs = filtered_df['peso_neto_etiqueta_lbs'].sum()
-                global_bolsas_lb = total_prod / total_lbs if total_lbs > 0 else 0
-                st.metric("Rendimiento Global", f"{global_bolsas_lb:,.0f} Bolsas/lb")
-            with c3:
-                promedio_merma = filtered_df['porcentaje_merma'].mean()
-                st.metric("Merma Promedio", f"{promedio_merma:.2f} %")
-                
-            st.markdown("<br>", unsafe_allow_html=True)
-            
-            c4, c5, c6 = st.columns(3)
-            with c4:
-                total_bobinas = filtered_df['no_bobina'].nunique()
-                st.metric("Bobinas Evaluadas", f"{total_bobinas}")
-            with c5:
-                prom_dens = filtered_df['densidad_g_cm3'].mean()
-                st.metric("Densidad Promedio", f"{prom_dens:.4f} g/cm3" if pd.notna(prom_dens) else "N/A")
-            with c6:
-                prom_esp = filtered_df['espesor_micras'].mean()
-                st.metric("Espesor Promedio", f"{prom_esp:.2f} µ" if pd.notna(prom_esp) else "N/A")
-                
-            st.markdown("<br>", unsafe_allow_html=True)
-            
             # Global Charts
-            col_chart1, col_chart2 = st.columns(2)
-            with col_chart1:
-                fig_prod = px.bar(
-                    filtered_df, x="fecha", y="produccion_real_estimada_und", color="producto", 
-                    title="Producción Real (und)", color_discrete_sequence=["#0066CC", "#5AC8FA", "#34C759"]
-                )
-                fig_prod.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
-                st.plotly_chart(fig_prod, use_container_width=True)
-                
-            with col_chart2:
-                fig_rend = px.scatter(
-                    filtered_df, x="fecha", y="bolsas_por_libra", color="producto", size="peso_bruto_kg",
-                    title="Rendimiento (Bolsas/lb) por Fecha", color_discrete_sequence=["#FF3B30", "#FF9500", "#FFCC00"]
-                )
-                fig_rend.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
-                st.plotly_chart(fig_rend, use_container_width=True)
-                
+            fig_rend = px.scatter(
+                filtered_df, x="fecha", y="bolsas_por_libra", color="producto", size="peso_bruto_kg",
+                title="Rendimiento (Bolsas/lb) por Fecha", color_discrete_sequence=["#FF3B30", "#FF9500", "#FFCC00"]
+            )
+            fig_rend.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+            st.plotly_chart(fig_rend, use_container_width=True)
+            
+            st.markdown("<hr style='border: 1px dashed #E5E5EA;'>", unsafe_allow_html=True)
+            
+            # KPIs por producto a la par
+            productos_presentes_global = filtered_df['producto'].unique()
+            cols_prods_g = st.columns(len(productos_presentes_global))
+            
+            for idx, prod in enumerate(productos_presentes_global):
+                with cols_prods_g[idx]:
+                    st.markdown(f"### {prod}")
+                    df_prod_g = filtered_df[filtered_df['producto'] == prod]
+                    
+                    total_prod = df_prod_g['produccion_real_estimada_und'].sum()
+                    total_lbs = df_prod_g['peso_neto_etiqueta_lbs'].sum()
+                    rend = total_prod / total_lbs if total_lbs > 0 else 0
+                    merma = df_prod_g['porcentaje_merma'].mean()
+                    bobinas = df_prod_g['no_bobina'].nunique()
+                    dens = df_prod_g['densidad_g_cm3'].mean()
+                    esp = df_prod_g['espesor_micras'].mean()
+                    
+                    m1, m2 = st.columns(2)
+                    m1.metric("Prod. (und)", f"{total_prod:,.0f}")
+                    m2.metric("Rendimiento", f"{rend:,.0f} Bolsas/lb")
+                    
+                    m3, m4 = st.columns(2)
+                    m3.metric("Merma Prom.", f"{merma:.2f} %" if pd.notna(merma) else "N/A")
+                    m4.metric("Bobinas", f"{bobinas}")
+                    
+                    m5, m6 = st.columns(2)
+                    m5.metric("Densidad", f"{dens:.4f}" if pd.notna(dens) else "N/A")
+                    m6.metric("Espesor", f"{esp:.2f} µ" if pd.notna(esp) else "N/A")
+            
+            st.markdown("<br>", unsafe_allow_html=True)
             st.subheader("Historial Global")
             display_cols = ['fecha', 'producto', 'no_bobina', 'peso_neto_etiqueta_lbs', 'porcentaje_merma', 'produccion_real_estimada_und', 'bolsas_por_libra']
             st.dataframe(filtered_df[display_cols], use_container_width=True, hide_index=True)
