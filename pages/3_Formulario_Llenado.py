@@ -4,11 +4,11 @@ from database import insert_llenado, get_next_llenado_muestra, get_last_set_maqu
 from ui_helper import apply_premium_theme, render_top_navigation
 
 @st.cache_resource
-def setup_database():
+def setup_database_v3():
     init_db()
     return True
 
-setup_database()
+setup_database_v3()
 
 st.set_page_config(page_title="Ingreso de Llenado", page_icon="💧", layout="wide")
 apply_premium_theme()
