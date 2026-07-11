@@ -216,6 +216,7 @@ if not df_llenado.empty:
         
         for idx, prod in enumerate(productos_presentes):
             with cols_prods[idx]:
+                rango_max = None
                 st.markdown(f"### {prod}")
                 df_prod = df_llenado_filtrado[df_llenado_filtrado['producto'] == prod]
                 prom = df_prod['peso_g'].mean()
@@ -286,6 +287,11 @@ if not df_llenado.empty:
                                     st.error(f"⚠️ **Sobredosificación vs Máquina** (p={p_val_sp:.3f})\n\nEl peso promedio ({prom_sp:.2f}g) es mayor al Set-Point promedio de la máquina ({setpoint_mean:.2f}g).")
                                 else:
                                     st.warning(f"⚠️ **Subdosificación vs Máquina** (p={p_val_sp:.3f})\n\nEl peso promedio ({prom_sp:.2f}g) es menor al Set-Point promedio de la máquina ({setpoint_mean:.2f}g).")
+                                
+                                if rango_max is not None:
+                                    desfase = setpoint_mean - prom_sp
+                                    setpoint_recomendado = rango_max + desfase
+                                    st.info(f"💡 **Ajuste Recomendado:** Para obtener un peso promedio en el límite mayor aceptable ({rango_max:.2f}g), configura la máquina a **{setpoint_recomendado:.2f}g**.")
                             else:
                                 p_val_disp_sp = p_val_sp if pd.notna(p_val_sp) else 1.0
                                 st.success(f"✅ **Proceso Alineado a Máquina** (p={p_val_disp_sp:.3f})\n\nEstadísticamente el peso coincide con la configuración de la máquina ({setpoint_mean:.2f}g).")
