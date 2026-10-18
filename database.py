@@ -1,18 +1,41 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import psycopg2
+try:
+    import psycopg
+except ImportError:
+    psycopg = None
+try:
+    import psycopg2
+except ImportError:
+    psycopg2 = None
 from sqlalchemy import create_engine
 
 # Helper para obtener URL y crear motor de Pandas
 def get_db_url():
     return st.secrets["postgres"]["url"]
 
+def get_clean_pg_url(url: str) -> str:
+    if url.startswith("postgresql+psycopg://"):
+        return url.replace("postgresql+psycopg://", "postgresql://", 1)
+    if url.startswith("postgresql+psycopg2://"):
+        return url.replace("postgresql+psycopg2://", "postgresql://", 1)
+    return url
+
 def get_connection():
-    return psycopg2.connect(get_db_url())
+    url = get_clean_pg_url(get_db_url())
+    if psycopg is not None:
+        return psycopg.connect(url)
+    elif psycopg2 is not None:
+        return psycopg2.connect(url)
+    else:
+        raise ImportError("No se encontró ningún driver de PostgreSQL. Instala psycopg o psycopg2-binary.")
 
 def get_engine():
-    return create_engine(get_db_url())
+    url = get_db_url()
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql://", 1)
+    return create_engine(url)
 
 def init_db():
     conn = get_connection()
