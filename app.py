@@ -216,19 +216,17 @@ if not df_llenado.empty:
         
         for idx, prod in enumerate(productos_presentes):
             with cols_prods[idx]:
-                rango_max = None
                 st.markdown(f"### {prod}")
                 df_prod = df_llenado_filtrado[df_llenado_filtrado['producto'] == prod]
                 prom = df_prod['peso_g'].mean()
                 std_val = df_prod['peso_g'].std()
                 std_val = std_val if pd.notna(std_val) else 0.0
-                n = len(df_prod)
                 
                 m1, m2 = st.columns(2)
                 m1.metric("Promedio", f"{prom:.2f} g")
                 m2.metric("Desv. Estándar", f"{std_val:.3f} g")
                 
-                if not df_prod_params.empty and stats is not None:
+                if not df_prod_params.empty:
                     row_param = df_prod_params[df_prod_params['producto'] == prod]
                     if not row_param.empty:
                         peso_liq = float(row_param.iloc[0]['peso_producto_g'])
@@ -237,65 +235,5 @@ if not df_llenado.empty:
                         
                         if mu0 > 0:
                             st.caption(f"⚖️ *Objetivo Teórico:* {mu0:.2f} g")
-                            if n >= 2:
-                                t_stat, p_val = stats.ttest_1samp(df_prod['peso_g'], mu0)
-                                alpha = 0.05
-                                
-                                if pd.notna(p_val) and p_val < alpha:
-                                    if prom > mu0:
-                                        st.error(f"⚠️ **Sobredosificación Detectada** (p={p_val:.3f})\n\nEl peso es significativamente mayor al esperado. Ajustar máquina.")
-                                    else:
-                                        st.warning(f"⚠️ **Subdosificación Detectada** (p={p_val:.3f})\n\nEl peso es significativamente menor al esperado. Riesgo de reclamos.")
-                                else:
-                                    p_val_display = p_val if pd.notna(p_val) else 1.0
-                                    st.success(f"✅ **Proceso Estable** (p={p_val_display:.3f})\n\nEl peso estadísticamente es igual al objetivo (95% confianza).")
-                                    
-                                # Calcular margen aceptable
-                                t_crit = stats.t.ppf(0.975, n-1)
-                                sem = df_prod['peso_g'].sem()
-                                if pd.notna(sem) and sem > 0:
-                                    margen_error = t_crit * sem
-                                    rango_min = mu0 - margen_error
-                                    rango_max = mu0 + margen_error
-                                    st.caption(f"📏 *Rango Aceptable (95% de confianza):* **{rango_min:.2f} g** a **{rango_max:.2f} g** (±{margen_error:.2f} g)")
-                                    
-                                    if std_val > 0:
-                                        prob_cumplimiento = (1 - stats.norm.cdf(mu0, loc=prom, scale=std_val)) * 100
-                                        st.markdown("---")
-                                        st.markdown("**🛠️ Ingeniería de Calidad**")
-                                        st.caption(f"El **{prob_cumplimiento:.1f}%** de la producción tiene un peso igual o mayor a **{mu0:.2f}g**.")
-                            else:
-                                st.info("ℹ️ Se requieren al menos 2 muestras para la prueba estadística.")
-                                
-                # --- Análisis vs Set-Point Máquina ---
-                if 'set_maquina_g' in df_prod.columns:
-                    df_setpoint = df_prod[df_prod['set_maquina_g'].notna() & (df_prod['set_maquina_g'] > 0)]
-                    if not df_setpoint.empty:
-                        st.markdown("**🔍 Análisis vs Set-Point Máquina**")
-                        prom_sp = df_setpoint['peso_g'].mean()
-                        n_sp = len(df_setpoint)
-                        setpoint_mean = df_setpoint['set_maquina_g'].mean()
-                        
-                        st.caption(f"Evaluando solo {n_sp} muestra(s) que incluyen Set-Point configurado.")
-                        
-                        if n_sp >= 2 and stats is not None:
-                            t_stat_sp, p_val_sp = stats.ttest_1samp(df_setpoint['peso_g'], setpoint_mean)
-                            alpha = 0.05
-                            
-                            if pd.notna(p_val_sp) and p_val_sp < alpha:
-                                if prom_sp > setpoint_mean:
-                                    st.error(f"⚠️ **Sobredosificación vs Máquina** (p={p_val_sp:.3f})\n\nEl peso promedio ({prom_sp:.2f}g) es mayor al Set-Point promedio de la máquina ({setpoint_mean:.2f}g).")
-                                else:
-                                    st.warning(f"⚠️ **Subdosificación vs Máquina** (p={p_val_sp:.3f})\n\nEl peso promedio ({prom_sp:.2f}g) es menor al Set-Point promedio de la máquina ({setpoint_mean:.2f}g).")
-                                
-                                if rango_max is not None:
-                                    desfase = setpoint_mean - prom_sp
-                                    setpoint_recomendado = rango_max + desfase
-                                    st.info(f"💡 **Ajuste Recomendado:** Para obtener un peso promedio en el límite mayor aceptable ({rango_max:.2f}g), configura la máquina a **{setpoint_recomendado:.2f}g**.")
-                            else:
-                                p_val_disp_sp = p_val_sp if pd.notna(p_val_sp) else 1.0
-                                st.success(f"✅ **Proceso Alineado a Máquina** (p={p_val_disp_sp:.3f})\n\nEstadísticamente el peso coincide con la configuración de la máquina ({setpoint_mean:.2f}g).")
-                        else:
-                            st.info(f"ℹ️ Set-Point Promedio Máquina: **{setpoint_mean:.2f}g**. Se requieren al menos 2 muestras para la prueba estadística.")
     else:
         st.info("No hay datos de llenado para el rango de fechas seleccionado.")
