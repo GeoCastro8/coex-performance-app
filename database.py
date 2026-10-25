@@ -54,7 +54,7 @@ def ensure_seed_60_muestras():
                 applied_at TEXT
             )
         ''')
-        cursor.execute("SELECT COUNT(*) FROM migraciones WHERE version = 'seed_60_muestras_v2'")
+        cursor.execute("SELECT COUNT(*) FROM migraciones WHERE version = 'seed_60_muestras_v3'")
         if cursor.fetchone()[0] == 0:
             seed_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'seed_data.json')
             if os.path.exists(seed_path):
@@ -109,7 +109,7 @@ def ensure_seed_60_muestras():
                     ''', tuple(d_row))
                 cursor.execute(
                     "INSERT INTO migraciones (version, applied_at) VALUES (%s, %s)",
-                    ('seed_60_muestras_v2', datetime.now().isoformat())
+                    ('seed_60_muestras_v3', datetime.now().isoformat())
                 )
         conn.commit()
         _SEED_CHECKED = True
