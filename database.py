@@ -39,6 +39,87 @@ def get_engine():
         url = url.replace("postgres://", "postgresql://", 1)
     return create_engine(url)
 
+_SEED_CHECKED = False
+
+def ensure_seed_60_muestras():
+    global _SEED_CHECKED
+    if _SEED_CHECKED:
+        return
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS migraciones (
+                version TEXT PRIMARY KEY,
+                applied_at TEXT
+            )
+        ''')
+        cursor.execute("SELECT COUNT(*) FROM migraciones WHERE version = 'seed_60_muestras_v2'")
+        if cursor.fetchone()[0] == 0:
+            seed_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'seed_data.json')
+            if os.path.exists(seed_path):
+                with open(seed_path, 'r', encoding='utf-8') as f:
+                    seed_payload = json.load(f)
+                cursor.execute("DROP TABLE IF EXISTS densidad")
+                cursor.execute("DROP TABLE IF EXISTS peso")
+                cursor.execute('''
+                    CREATE TABLE peso (
+                        id SERIAL PRIMARY KEY,
+                        fecha TEXT,
+                        producto TEXT,
+                        no_bobina TEXT UNIQUE,
+                        peso_neto_etiqueta_lbs REAL,
+                        peso_bascula_lbs REAL,
+                        peso_tubo_carton_kg REAL,
+                        merma_kg REAL,
+                        peso_bolsa_vacia_g REAL,
+                        ancho_bolsa_mm REAL,
+                        largo_bolsa_mm REAL,
+                        metros_etiqueta REAL
+                    )
+                ''')
+                cursor.execute('''
+                    CREATE TABLE densidad (
+                        id SERIAL PRIMARY KEY,
+                        fecha TEXT,
+                        no_bobina TEXT UNIQUE,
+                        peso_g REAL,
+                        area_cm2 REAL,
+                        espesor_a REAL,
+                        espesor_b REAL,
+                        espesor_c REAL,
+                        espesor_d REAL,
+                        espesor_e REAL
+                    )
+                ''')
+                for p_row in seed_payload.get('peso', []):
+                    cursor.execute('''
+                        INSERT INTO peso (
+                            fecha, producto, no_bobina, peso_neto_etiqueta_lbs, peso_bascula_lbs,
+                            peso_tubo_carton_kg, merma_kg, peso_bolsa_vacia_g,
+                            ancho_bolsa_mm, largo_bolsa_mm, metros_etiqueta
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ''', tuple(p_row))
+                for d_row in seed_payload.get('densidad', []):
+                    cursor.execute('''
+                        INSERT INTO densidad (
+                            fecha, no_bobina, peso_g, area_cm2,
+                            espesor_a, espesor_b, espesor_c, espesor_d, espesor_e
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ''', tuple(d_row))
+                cursor.execute(
+                    "INSERT INTO migraciones (version, applied_at) VALUES (%s, %s)",
+                    ('seed_60_muestras_v2', datetime.now().isoformat())
+                )
+        conn.commit()
+        _SEED_CHECKED = True
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        cursor.close()
+        conn.close()
+
 def init_db():
     conn = get_connection()
     cursor = conn.cursor()
@@ -141,44 +222,10 @@ def init_db():
         for p in productos_iniciales:
             cursor.execute("INSERT INTO parametros_producto (producto, peso_producto_g, peso_bolsa_g) VALUES (%s, 0.0, 0.0)", (p,))
             
-    # Migración única para cargar las 60 muestras del estudio (sin las 3 de Ficha Técnica)
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS migraciones (
-            version TEXT PRIMARY KEY,
-            applied_at TEXT
-        )
-    ''')
-    cursor.execute("SELECT COUNT(*) FROM migraciones WHERE version = 'seed_60_muestras_2026_10_25'")
-    if cursor.fetchone()[0] == 0:
-        seed_path = os.path.join(os.path.dirname(__file__), 'seed_data.json')
-        if os.path.exists(seed_path):
-            with open(seed_path, 'r', encoding='utf-8') as f:
-                seed_payload = json.load(f)
-            cursor.execute("DELETE FROM densidad")
-            cursor.execute("DELETE FROM peso")
-            for p_row in seed_payload.get('peso', []):
-                cursor.execute('''
-                    INSERT INTO peso (
-                        fecha, producto, no_bobina, peso_neto_etiqueta_lbs, peso_bascula_lbs,
-                        peso_tubo_carton_kg, merma_kg, peso_bolsa_vacia_g,
-                        ancho_bolsa_mm, largo_bolsa_mm, metros_etiqueta
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                ''', tuple(p_row))
-            for d_row in seed_payload.get('densidad', []):
-                cursor.execute('''
-                    INSERT INTO densidad (
-                        fecha, no_bobina, peso_g, area_cm2,
-                        espesor_a, espesor_b, espesor_c, espesor_d, espesor_e
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                ''', tuple(d_row))
-            cursor.execute(
-                "INSERT INTO migraciones (version, applied_at) VALUES (%s, %s)",
-                ('seed_60_muestras_2026_10_25', datetime.now().isoformat())
-            )
-            
     conn.commit()
     cursor.close()
     conn.close()
+    ensure_seed_60_muestras()
 
 def get_config():
     conn = get_connection()
@@ -236,6 +283,7 @@ def update_product_params(producto, peso_producto_g, peso_bolsa_g):
     conn.close()
 
 def get_available_bobinas():
+    ensure_seed_60_muestras()
     engine = get_engine()
     query = '''
         SELECT p.no_bobina, p.producto, p.fecha 
@@ -340,6 +388,7 @@ def get_last_set_maquina(fecha_str):
     return None
 
 def get_integrated_data():
+    ensure_seed_60_muestras()
     engine = get_engine()
     
     df_peso = pd.read_sql_query("SELECT * FROM peso", engine)
@@ -412,6 +461,7 @@ def get_llenado_data():
     return pd.read_sql_query("SELECT * FROM llenado", engine)
     
 def get_raw_table(table_name):
+    ensure_seed_60_muestras()
     engine = get_engine()
     return pd.read_sql_query(f"SELECT * FROM {table_name}", engine)
 
