@@ -41,7 +41,10 @@ else:
     
     productos = df['producto'].dropna().unique().tolist()
     if '' in productos: productos.remove('')
-    selected_products = st.sidebar.multiselect("Producto", options=productos, default=productos)
+    selected_products = st.sidebar.multiselect(
+        "Producto", options=productos, default=productos,
+        key=f"prod_filter_{len(df)}"
+    )
     
     min_date = df['fecha'].min().date()
     max_date = df['fecha'].max().date()
@@ -49,7 +52,10 @@ else:
     if min_date == max_date:
         start_date, end_date = min_date, max_date
     else:
-        date_range = st.sidebar.date_input("Fecha", [min_date, max_date])
+        date_range = st.sidebar.date_input(
+            "Fecha", [min_date, max_date],
+            key=f"fecha_filter_{min_date}_{max_date}_{len(df)}"
+        )
         if len(date_range) == 2:
             start_date, end_date = date_range
         else:
