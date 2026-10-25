@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+import os
+import json
 from datetime import datetime
 try:
     import psycopg
@@ -138,6 +140,41 @@ def init_db():
         productos_iniciales = ["Aguazul", "Montana Manzana", "Montana Naranja"]
         for p in productos_iniciales:
             cursor.execute("INSERT INTO parametros_producto (producto, peso_producto_g, peso_bolsa_g) VALUES (%s, 0.0, 0.0)", (p,))
+            
+    # Migración única para cargar las 60 muestras del estudio (sin las 3 de Ficha Técnica)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS migraciones (
+            version TEXT PRIMARY KEY,
+            applied_at TEXT
+        )
+    ''')
+    cursor.execute("SELECT COUNT(*) FROM migraciones WHERE version = 'seed_60_muestras_2026_10_25'")
+    if cursor.fetchone()[0] == 0:
+        seed_path = os.path.join(os.path.dirname(__file__), 'seed_data.json')
+        if os.path.exists(seed_path):
+            with open(seed_path, 'r', encoding='utf-8') as f:
+                seed_payload = json.load(f)
+            cursor.execute("DELETE FROM densidad")
+            cursor.execute("DELETE FROM peso")
+            for p_row in seed_payload.get('peso', []):
+                cursor.execute('''
+                    INSERT INTO peso (
+                        fecha, producto, no_bobina, peso_neto_etiqueta_lbs, peso_bascula_lbs,
+                        peso_tubo_carton_kg, merma_kg, peso_bolsa_vacia_g,
+                        ancho_bolsa_mm, largo_bolsa_mm, metros_etiqueta
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ''', tuple(p_row))
+            for d_row in seed_payload.get('densidad', []):
+                cursor.execute('''
+                    INSERT INTO densidad (
+                        fecha, no_bobina, peso_g, area_cm2,
+                        espesor_a, espesor_b, espesor_c, espesor_d, espesor_e
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ''', tuple(d_row))
+            cursor.execute(
+                "INSERT INTO migraciones (version, applied_at) VALUES (%s, %s)",
+                ('seed_60_muestras_2026_10_25', datetime.now().isoformat())
+            )
             
     conn.commit()
     cursor.close()

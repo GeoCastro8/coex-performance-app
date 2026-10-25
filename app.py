@@ -9,11 +9,11 @@ except ImportError:
     stats = None
 
 @st.cache_resource
-def setup_database_v3():
+def setup_database_v4():
     init_db()
     return True
 
-setup_database_v3()
+setup_database_v4()
 
 st.set_page_config(
     page_title="Rendimiento de Coextruido",
